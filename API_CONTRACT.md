@@ -104,8 +104,86 @@ All non-2xx responses use:
 
 ### Search (Phase 2)
 
-- `GET /api/listings?q=&eventType=&city=&date=&provider=&page=&limit=`
-- `GET /api/listings/:id`
+#### Money representation
+
+Every monetary value in this API is an integer in **agorot** (1 ILS = 100 agorot). Field names always end with `Agorot`. Floats are never used for money, anywhere.
+
+#### Listing object
+
+Returned by both the list and detail endpoints.
+
+```json
+{
+  "id": "<uuid>",
+  "status": "active",
+  "event": {
+    "name": "Hapoel TLV vs. Maccabi",
+    "date": "2026-06-15T20:00:00.000Z",
+    "venue": "Bloomfield Stadium",
+    "city": "Tel Aviv",
+    "category": "sports"
+  },
+  "seat": {
+    "section": "5",
+    "row": "12",
+    "seat": "8"
+  },
+  "price": {
+    "faceValueAgorot": 25000,
+    "serviceFeeAgorot": 2500
+  },
+  "provider": "ticketmaster",
+  "createdAt": "2026-04-30T08:00:00.000Z"
+}
+```
+
+- `category` is `"sports" | "culture"`.
+- `provider` is one of the supported provider IDs (currently `"ticketmaster" | "leaan" | "eventim" | "hadran"`; authoritative list grows alongside connectors).
+- `seat.row` and `seat.seat` are optional (general-admission tickets may omit them).
+- `status` is always `"active"` for listings returned in Phase 2 (other states are filtered out).
+
+#### GET /api/listings
+
+Search, filter, sort, paginate active listings. Public — no auth required.
+
+Query parameters (all optional):
+
+| Param            | Type                                   | Notes                                                                           |
+| ---------------- | -------------------------------------- | ------------------------------------------------------------------------------- |
+| `q`              | string                                 | Free-text match across event name, venue, city. Case-insensitive.               |
+| `category`       | `sports` \| `culture`                  |                                                                                 |
+| `cities`         | comma-separated strings                | OR within. e.g. `cities=Tel%20Aviv,Haifa`                                       |
+| `providers`      | comma-separated provider IDs           | OR within.                                                                      |
+| `dateFrom`       | `YYYY-MM-DD`                           | Inclusive. Filters by event day in Asia/Jerusalem time.                         |
+| `dateTo`         | `YYYY-MM-DD`                           | Inclusive.                                                                      |
+| `minPriceAgorot` | integer                                | Compares against `faceValueAgorot + serviceFeeAgorot` (total).                  |
+| `maxPriceAgorot` | integer                                | Same total.                                                                     |
+| `sort`           | `soonest` \| `lowestPrice` \| `newest` | Default: `soonest`. `lowestPrice` sorts by total. `newest` by `createdAt` desc. |
+| `page`           | integer ≥ 1                            | Default: `1`.                                                                   |
+| `limit`          | integer 1–100                          | Default: `20`. Max: `100`.                                                      |
+
+Filters combine with AND across types and OR within (`cities=A,B` AND `providers=X,Y` returns listings in city A or B AND from provider X or Y).
+
+Response 200:
+
+```json
+{
+  "items": [ /* Listing[] */ ],
+  "page": 1,
+  "limit": 20,
+  "total": 142
+}
+```
+
+Errors: `400 invalid_request` (validation — bad enum value, malformed date, page<1, limit out of range).
+
+#### GET /api/listings/:id
+
+Returns a single listing by ID. Public — no auth required.
+
+Response 200: a Listing object.
+
+Errors: `404 listing_not_found` (no such ID, or status is not `active` in Phase 2).
 
 ### User Profile (Phase 2)
 
