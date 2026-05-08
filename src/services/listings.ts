@@ -67,6 +67,22 @@ function buildFilteredQuery(
   return q;
 }
 
+export const getListingById = async (id: string): Promise<ListingResponse> => {
+  const { data, error } = await supabaseAdmin
+    .from('listings_search')
+    .select('*')
+    .eq('listing_id', id)
+    .eq('status', 'active')
+    .maybeSingle();
+  if (error) {
+    throw new AppError(500, 'listing_query_failed', error.message);
+  }
+  if (!data) {
+    throw new AppError(404, 'listing_not_found', 'Listing not found or not active');
+  }
+  return mapRowToListing(data as ListingsSearchRow);
+};
+
 export const searchListings = async (
   input: ListingsSearchInput,
 ): Promise<ListingsSearchResult> => {
