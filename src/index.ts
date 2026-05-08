@@ -2,6 +2,7 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import { env } from './utils/env';
 import authRouter from './routes/auth';
+import listingsRouter from './routes/listings';
 import { errorHandler, notFoundHandler } from './middleware/error';
 
 export function createApp(): Express {
@@ -15,6 +16,7 @@ export function createApp(): Express {
   });
 
   app.use('/api/auth', authRouter);
+  app.use('/api/listings', listingsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
