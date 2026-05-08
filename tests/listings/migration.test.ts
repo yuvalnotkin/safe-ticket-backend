@@ -23,6 +23,7 @@ describe('listings_search view', () => {
       .limit(5);
     expect(error).toBeNull();
     expect(data).not.toBeNull();
+    expect(data!.length).toBeGreaterThan(0);
     for (const row of data!) {
       expect(row.listing_id).toBeTruthy();
       expect(row.ticket_id).toBeTruthy();
