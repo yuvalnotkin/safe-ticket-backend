@@ -16,12 +16,14 @@ export interface ListingsSearchResult {
   total: number;
 }
 
-export const searchListings = async (
+/** Applies filter predicates to a filter builder (no sort, no range). */
+function buildFilteredQuery(
   input: ListingsSearchInput,
-): Promise<ListingsSearchResult> => {
+  opts: { head?: boolean } = {},
+) {
   let q = supabaseAdmin
     .from('listings_search')
-    .select('*', { count: 'exact' })
+    .select('*', { count: 'exact', head: opts.head ?? false })
     .eq('status', 'active');
 
   if (input.category === 'sports') {
@@ -62,8 +64,25 @@ export const searchListings = async (
     }
   }
 
-  // Default sort (T6) — additional sorts come in T10.
-  q = q.order('starts_at', { ascending: true });
+  return q;
+}
+
+export const searchListings = async (
+  input: ListingsSearchInput,
+): Promise<ListingsSearchResult> => {
+  let q = buildFilteredQuery(input);
+
+  switch (input.sort) {
+    case 'soonest':
+      q = q.order('starts_at', { ascending: true });
+      break;
+    case 'lowestPrice':
+      q = q.order('total_price_agorot', { ascending: true });
+      break;
+    case 'newest':
+      q = q.order('listing_created_at', { ascending: false });
+      break;
+  }
   // Stable pagination tiebreak — without this, rows with equal sort keys
   // can shuffle between pages on different requests.
   q = q.order('listing_id', { ascending: true });
@@ -71,6 +90,24 @@ export const searchListings = async (
   const offset = (input.page - 1) * input.limit;
   const { data, count, error } = await q.range(offset, offset + input.limit - 1);
   if (error) {
+    // Supabase returns PGRST103 when the requested range starts beyond the
+    // last row. Treat that as a valid empty page: re-run a HEAD-only count
+    // with the same filters so callers get 200 + the correct total.
+    if (
+      error.code === 'PGRST103' ||
+      (error.message && error.message.toLowerCase().includes('requested range not satisfiable'))
+    ) {
+      const { count: totalCount, error: countError } = await buildFilteredQuery(input, { head: true });
+      if (countError) {
+        throw new AppError(500, 'listings_query_failed', countError.message);
+      }
+      return {
+        items: [],
+        page: input.page,
+        limit: input.limit,
+        total: totalCount ?? 0,
+      };
+    }
     throw new AppError(500, 'listings_query_failed', error.message);
   }
 
