@@ -7,6 +7,7 @@ import {
   mapRowToListing,
 } from './listings.mapper';
 import { resolveDateRange } from '../utils/timezone';
+import { sanitizeQueryTerm } from '../utils/search';
 
 export interface ListingsSearchResult {
   items: ListingResponse[];
@@ -50,6 +51,15 @@ export const searchListings = async (
   }
   if (input.maxPriceAgorot != null) {
     q = q.lte('total_price_agorot', input.maxPriceAgorot);
+  }
+
+  if (input.q) {
+    const term = sanitizeQueryTerm(input.q);
+    if (term) {
+      q = q.or(
+        `event_title.ilike.%${term}%,venue_name.ilike.%${term}%,city.ilike.%${term}%`,
+      );
+    }
   }
 
   // Default sort (T6) — additional sorts come in T10.
