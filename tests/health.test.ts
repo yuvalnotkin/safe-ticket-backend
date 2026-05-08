@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
-import { app } from '../helpers';
+import { app } from './helpers';
 
 describe('GET /api/health', () => {
   it('returns 200 with { status: "ok" }', async () => {
