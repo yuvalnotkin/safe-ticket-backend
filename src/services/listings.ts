@@ -22,6 +22,20 @@ export const searchListings = async (
     .select('*', { count: 'exact' })
     .eq('status', 'active');
 
+  if (input.category === 'sports') {
+    q = q.eq('event_type', 'sport');
+  } else if (input.category === 'culture') {
+    q = q.in('event_type', ['concert', 'theater', 'festival', 'other']);
+  }
+
+  if (input.cities && input.cities.length) {
+    q = q.in('city', input.cities);
+  }
+
+  if (input.providers && input.providers.length) {
+    q = q.in('provider_slug', input.providers);
+  }
+
   // Default sort (T6) — additional sorts come in T10.
   q = q.order('starts_at', { ascending: true });
   // Stable pagination tiebreak — without this, rows with equal sort keys
