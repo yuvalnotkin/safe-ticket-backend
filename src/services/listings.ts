@@ -6,6 +6,7 @@ import {
   ListingsSearchRow,
   mapRowToListing,
 } from './listings.mapper';
+import { resolveDateRange } from '../utils/timezone';
 
 export interface ListingsSearchResult {
   items: ListingResponse[];
@@ -34,6 +35,21 @@ export const searchListings = async (
 
   if (input.providers && input.providers.length) {
     q = q.in('provider_slug', input.providers);
+  }
+
+  const { dateFromUtc, dateToUtcExclusive } = resolveDateRange(input.dateFrom, input.dateTo);
+  if (dateFromUtc) {
+    q = q.gte('starts_at', dateFromUtc);
+  }
+  if (dateToUtcExclusive) {
+    q = q.lt('starts_at', dateToUtcExclusive);
+  }
+
+  if (input.minPriceAgorot != null) {
+    q = q.gte('total_price_agorot', input.minPriceAgorot);
+  }
+  if (input.maxPriceAgorot != null) {
+    q = q.lte('total_price_agorot', input.maxPriceAgorot);
   }
 
   // Default sort (T6) — additional sorts come in T10.
