@@ -217,7 +217,9 @@ Errors: `401 unauthorized`, `404 user_not_found`.
 
 #### PUT /api/users/me/profile
 
-Requires `Authorization: Bearer <jwt>`. Partial update of editable profile fields. Every field is optional; fields omitted from the request body are left unchanged. `email` is read-only on this endpoint (changed via auth flows). `avatarUrl` accepts `null` to clear an existing value.
+Requires `Authorization: Bearer <jwt>`. Partial update of editable profile fields. Every field is optional; fields omitted from the request body are left unchanged. `avatarUrl` accepts `null` to clear an existing value.
+
+The request body is **strictly validated**. Any field outside `displayName`, `phone`, `avatarUrl` is rejected with `400 invalid_request`, code `unrecognized_keys`. This explicitly includes `email` (auth-domain — changed via auth flows, not here).
 
 Request:
 
