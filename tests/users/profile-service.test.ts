@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { supabaseAdmin } from '../../src/utils/supabase';
 import { getProfile, updateProfile } from '../../src/services/profile';
 
@@ -50,6 +50,9 @@ describe('profileService.updateProfile', () => {
   beforeEach(async () => {
     snap = await snapshot(AVIV_ID);
   });
+  afterEach(async () => {
+    await restore(AVIV_ID, snap);
+  });
 
   it('partial update — only changes provided fields', async () => {
     const before = await getProfile(AVIV_ID);
@@ -57,14 +60,12 @@ describe('profileService.updateProfile', () => {
     expect(after.displayName).toBe('Aviv C.');
     expect(after.phone).toBe(before.phone);
     expect(after.avatarUrl).toBe(before.avatarUrl);
-    await restore(AVIV_ID, snap);
   });
 
   it('null avatarUrl clears the field', async () => {
     await updateProfile(AVIV_ID, { avatarUrl: 'https://example.com/a.jpg' });
     const after = await updateProfile(AVIV_ID, { avatarUrl: null });
     expect(after.avatarUrl).toBeNull();
-    await restore(AVIV_ID, snap);
   });
 
   it('empty patch still bumps updatedAt', async () => {
@@ -74,7 +75,6 @@ describe('profileService.updateProfile', () => {
     expect(new Date(after.updatedAt).getTime()).toBeGreaterThan(
       new Date(before.updatedAt).getTime(),
     );
-    await restore(AVIV_ID, snap);
   });
 
   it('throws 404 user_not_found when no profile row exists', async () => {
