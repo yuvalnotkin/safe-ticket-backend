@@ -108,6 +108,14 @@ All non-2xx responses use:
 
 Every monetary value in this API is an integer in **agorot** (1 ILS = 100 agorot). Field names always end with `Agorot`. Floats are never used for money, anywhere.
 
+#### Service fee
+
+The buyer service fee is **10% of face value, integer-truncated** (`Math.floor(faceValueAgorot * 0.10)`). Truncation is always *down* — the platform never rounds up against the buyer. Total price the buyer pays is `faceValueAgorot + serviceFeeAgorot`.
+
+Example: `faceValueAgorot = 22000` → `serviceFeeAgorot = 2200` → total = `24200`.
+
+The seller-side service fee will be added in Phase 4 alongside payouts; until then, only the buyer fee is exposed.
+
 #### Listing object
 
 Returned by both the list and detail endpoints.
@@ -137,8 +145,8 @@ Returned by both the list and detail endpoints.
 }
 ```
 
-- `category` is `"sports" | "culture"`.
-- `provider` is one of the supported provider IDs (currently `"ticketmaster" | "leaan" | "eventim" | "hadran"`; authoritative list grows alongside connectors).
+- `category` is `"sports" | "culture"`. The DB models a finer-grained `event_type` (`sport | concert | theater | festival | other`); the API folds everything that isn't `sport` into `culture`.
+- `provider` is one of the supported provider slugs (currently `"eventim_il" | "hala" | "leaan" | "tmura"`; authoritative list grows alongside connectors). Validation on the `providers` query param is permissive — unknown slugs simply match nothing rather than 400.
 - `seat.row` and `seat.seat` are optional (general-admission tickets may omit them).
 - `status` is always `"active"` for listings returned in Phase 2 (other states are filtered out).
 
