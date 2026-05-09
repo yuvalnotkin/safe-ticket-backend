@@ -195,8 +195,51 @@ Errors: `404 listing_not_found` (no such ID, or status is not `active` in Phase 
 
 ### User Profile (Phase 2)
 
-- `GET /api/users/me/profile`
-- `PUT /api/users/me/profile`
+#### GET /api/users/me/profile
+
+Requires `Authorization: Bearer <jwt>`. Returns the current user's profile — same shape as `GET /api/auth/me`. Provided as a profile-domain endpoint for symmetry with `PUT`; consumers can use either endpoint to read current profile.
+
+Response 200:
+
+```json
+{
+  "id": "<uuid>",
+  "email": "user@example.com",
+  "displayName": "Aviv Cohen",
+  "phone": "+972-50-1234567",
+  "avatarUrl": null,
+  "createdAt": "2026-04-27T05:29:06.977097+00:00",
+  "updatedAt": "2026-04-27T05:29:06.977097+00:00"
+}
+```
+
+Errors: `401 unauthorized`, `404 user_not_found`.
+
+#### PUT /api/users/me/profile
+
+Requires `Authorization: Bearer <jwt>`. Partial update of editable profile fields. Every field is optional; fields omitted from the request body are left unchanged. `email` is read-only on this endpoint (changed via auth flows). `avatarUrl` accepts `null` to clear an existing value.
+
+Request:
+
+```json
+{
+  "displayName": "Aviv C.",
+  "phone": "+972-50-9876543",
+  "avatarUrl": "https://example.com/avatars/aviv.jpg"
+}
+```
+
+Validation:
+
+- `displayName`: string, 1–80 chars after trim.
+- `phone`: string or `null`. If string, must match the format `^\+?[0-9 \-]{7,20}$` (digits, spaces, hyphens, optional leading `+`).
+- `avatarUrl`: valid URL string or `null`.
+
+Empty body (`{}`) is valid and is a no-op (`updatedAt` is still bumped).
+
+Response 200: same shape as `GET`, reflecting the updated profile.
+
+Errors: `400 invalid_request`, `401 unauthorized`, `404 user_not_found`.
 
 ### Seller (Phase 3)
 
