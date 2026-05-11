@@ -191,7 +191,12 @@ Returns a single listing by ID. Public — no auth required.
 
 Response 200: a Listing object.
 
-Errors: `404 listing_not_found` (no such ID, or status is not `active` in Phase 2).
+Errors:
+
+- `400 invalid_request` — `id` is not a well-formed UUID. The backend's Zod UUID validation rejects malformed ids before lookup.
+- `404 listing_not_found` — `id` is a valid UUID but no row matches, or the row exists but `status` is not `active` in Phase 2.
+
+Clients should treat both as "this listing is not available" — distinguishing "malformed id" from "missing record" is not useful in user-facing UI. (Surfaced 2026-05-11 during frontend Phase 2 segment 2 wiring; the previous contract documented only the 404 path.)
 
 ### User Profile (Phase 2)
 
