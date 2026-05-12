@@ -100,7 +100,21 @@ All non-2xx responses use:
 { "error": { "code": "<machine_code>", "message": "<human message>", "details": [...] } }
 ```
 
-`details` is present only for `invalid_request` (zod issue list).
+`details` is present only for `invalid_request` and contains the Zod issue list. Each issue object always carries at minimum:
+
+- `code`: machine identifier for the issue type (e.g., `"invalid_format"`, `"too_small"`, `"unrecognized_keys"`).
+- `path`: array of field names locating the offending value (e.g., `["phone"]`, `["price", "faceValueAgorot"]`).
+- `message`: human-readable explanation.
+
+Issues may also carry contextual keys depending on `code` — Zod adds fields like `origin`, `format`, `pattern`, `minimum`, `maximum`, `keys`. Consumers **must read `path` + `message` and tolerate any additional keys**; do not validate the issue shape exhaustively.
+
+**`unrecognized_keys` special case.** When the request body contains a key outside a strict object's allowlist, the issue uses `path: []` (the unknown key is not on a known path) and reports the offending key(s) in a separate `keys` field:
+
+```json
+{ "code": "unrecognized_keys", "keys": ["email"], "path": [], "message": "Unrecognized key: \"email\"" }
+```
+
+Consumers wanting to surface this should detect by `code === "unrecognized_keys"`, not by `path`. (Surfaced 2026-05-12 during frontend Phase 2 segment 4 verification.)
 
 ### Search (Phase 2)
 
