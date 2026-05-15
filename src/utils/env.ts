@@ -8,6 +8,10 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  // Public URL the frontend uses to reach this backend. Used to build the
+  // mock-provider `authUrl` returned by the seller-auth flow so the browser
+  // can navigate to a backend route. Default suits local development.
+  PUBLIC_BACKEND_URL: z.string().url().default('http://localhost:3001'),
 });
 
 export type Env = z.infer<typeof envSchema>;
