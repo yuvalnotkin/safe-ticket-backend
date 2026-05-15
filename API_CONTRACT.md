@@ -264,11 +264,149 @@ Errors: `400 invalid_request`, `401 unauthorized`, `404 user_not_found`.
 
 ### Seller (Phase 3)
 
-- `POST /api/sell/start-auth`
-- `GET /api/sell/tickets`
-- `POST /api/sell/create-listing`
-- `GET /api/sell/my-listings`
-- `DELETE /api/sell/listings/:id`
+All seller endpoints require `Authorization: Bearer <jwt>` (the Safe Ticket session JWT from Phase 2 auth). The seller's provider access token (issued by Eventim Israel, Hala, Leaan, or Tmura) is stored server-side keyed by `(safeTicketUserId, provider)` and is never exposed to the client. Foundational decision: provider-auth flow is OAuth-style redirect with server-side tokens; see `decisions/0001-provider-auth-flow.md`.
+
+Phase 3 ships a **mock connector** for all four supported provider slugs (`eventim_il` / `hala` / `leaan` / `tmura`). The mock implements the same surface; Phase 5 swaps in real implementations without a contract break.
+
+#### POST /api/sell/start-auth
+
+Begin the provider OAuth handshake. The response carries the URL the frontend must navigate the browser to. The opaque `state` token is the CSRF / flow-continuity parameter — the frontend stores it (e.g. in `sessionStorage`) and passes it back unchanged to the callback endpoint.
+
+Request:
+
+```json
+{ "provider": "eventim_il" }
+```
+
+Response 200:
+
+```json
+{
+  "authUrl": "https://safe-ticket-backend-production.up.railway.app/api/sell/mock-provider/authorize?state=<opaque>",
+  "state": "<opaque>"
+}
+```
+
+In Phase 3, `authUrl` points at the backend's mock-provider route (see below). In Phase 5, it points at the real provider's authorization endpoint. The frontend treats both identically: navigate the browser to `authUrl`.
+
+Errors: `400 invalid_request` (unknown provider slug, missing field), `401 unauthorized`.
+
+#### GET /api/sell/mock-provider/authorize
+
+**Mock-only, Phase 3 scaffolding.** Not present once real connectors ship in Phase 5.
+
+Query: `?state=<opaque>` (echoed from `start-auth`).
+
+Behavior: backend immediately 302-redirects to `${FRONTEND_URL}/sell/callback?provider=<slug>&code=<fake>&state=<echo>`. No human interaction; the user's browser bounces straight back to the frontend callback page with a fake authorization code. This exercises the OAuth contract shape without serving a fake provider login UI.
+
+Real provider authorize URLs (Phase 5) will, of course, take the user through an actual provider-side login + consent screen before redirecting back to the same frontend callback URL.
+
+#### POST /api/sell/callback
+
+Complete the OAuth handshake. Called by the frontend after the provider (or the mock) redirects the browser back to the frontend's `/sell/callback` page. Exchanges `code` for a provider access token; stores the token server-side; returns just the identifiers the frontend needs to render the next step.
+
+Request:
+
+```json
+{ "provider": "eventim_il", "code": "<from-redirect>", "state": "<from-redirect>" }
+```
+
+Response 200:
+
+```json
+{ "providerUserId": "<opaque>", "expiresAt": 1777281113 }
+```
+
+The actual provider access token is never returned. Subsequent seller endpoints look it up via the Safe Ticket JWT.
+
+Errors: `400 invalid_request`, `400 callback_failed` (state mismatch / expired code / connector exchange failure), `401 unauthorized`.
+
+#### GET /api/sell/tickets
+
+Returns the seller's tickets as known to the provider. Each ticket is pre-populated with event metadata, seat, face value (always provider-supplied, never seller-entered), and an eligibility flag. Tickets with `eligible: false` are returned so the UI can render them disabled with the reason.
+
+Query: `?provider=eventim_il` (required).
+
+Response 200:
+
+```json
+{
+  "items": [
+    {
+      "providerTicketId": "mock-tm-001",
+      "event": {
+        "name": "Maccabi TA vs Hapoel TA",
+        "date": "2026-06-15T20:00:00.000Z",
+        "venue": "Bloomfield Stadium",
+        "city": "Tel Aviv",
+        "category": "sports"
+      },
+      "seat": { "section": "5", "row": "12", "seat": "8" },
+      "faceValueAgorot": 22000,
+      "eligible": true,
+      "ineligibleReason": null
+    }
+  ]
+}
+```
+
+`ineligibleReason` is one of `"already_transferred"`, `"event_passed"`, `"non_transferable"`, `"already_listed_on_safe_ticket"`, or `null` when `eligible: true`. The `already_listed_on_safe_ticket` reason is set by the backend (not the connector) when the same `providerTicketId` already has a non-`removed` listing in our DB — prevents double-listing without trusting the connector to know about Safe Ticket state.
+
+Errors: `400 invalid_request` (missing/unknown provider), `401 unauthorized`, `409 no_provider_session` (the seller has not completed `/sell/callback` for this provider, or the stored token has expired and could not be refreshed).
+
+#### POST /api/sell/create-listing
+
+Creates an active listing in one shot. The backend re-runs `verifyOwnership` + `checkTransferEligibility` at the connector; if both pass, inserts the listing row with `status: "active"` and `verifiedAt: <now>`. Face value, seat, and event metadata are taken from the connector's snapshot — the seller does not supply them.
+
+The `serviceFeeAgorot` field on the resulting listing is computed per the standing rule (10% of face value, integer-truncated, never rounded up). The seller payout amount is computed and stored but is not returned in any Phase 3 response — Phase 4 surfaces it.
+
+Request:
+
+```json
+{ "provider": "eventim_il", "providerTicketId": "mock-tm-001" }
+```
+
+Response 201: a full Listing object (same shape as `GET /api/listings/:id`), with `status: "active"`.
+
+Errors:
+
+- `400 invalid_request` — validation (unknown provider, missing field).
+- `401 unauthorized`.
+- `409 no_provider_session` — stored token missing/expired.
+- `409 ticket_not_eligible` — `verifyOwnership` or `checkTransferEligibility` rejected. `details` carries `{ reason: "already_transferred" | "event_passed" | "non_transferable" | "ownership_mismatch" }`.
+- `409 already_listed` — same `(provider, providerTicketId)` already has a non-`removed` listing in our DB.
+
+#### GET /api/sell/my-listings
+
+Returns every listing belonging to the calling seller, regardless of status — `active`, `removed`, and (Phase 4) `reserved` / `sold` / `expired`. Lets the seller see their full history on the seller dashboard.
+
+Response 200:
+
+```json
+{
+  "items": [
+    /* Listing[] — each item is the same Listing shape returned by GET /api/listings/:id,
+       except `status` may also be "removed" | "expired" | "reserved" | "sold". */
+  ]
+}
+```
+
+Sorted by `createdAt` descending. No pagination in Phase 3 (a single seller will not approach the threshold where pagination matters; revisit if and when one does).
+
+Errors: `401 unauthorized`.
+
+#### DELETE /api/sell/listings/:id
+
+Soft-deletes a listing the calling user owns. Flips `status` from `active` to `removed`, bumps `updatedAt`. The row is preserved for audit; hard delete is never offered.
+
+Response: `204 No Content`.
+
+Errors:
+
+- `401 unauthorized`.
+- `403 forbidden` — the listing exists but belongs to a different seller. (Distinct from `404` deliberately — leaking the existence of another seller's listing is information disclosure.)
+- `404 listing_not_found` — no listing with that `id`, or `id` is not a valid UUID (matches `GET /api/listings/:id` semantics).
+- `409 cannot_remove` — the listing is in a status that doesn't permit removal. In Phase 3 this triggers for `removed`, `sold`, or `expired`. Phase 4 adds `reserved`.
 
 ### Buyer (Phase 4)
 
