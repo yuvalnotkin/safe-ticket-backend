@@ -22,6 +22,7 @@ describe('mockConnector — startAuth + handleCallback', () => {
       const url = new URL(authUrl);
       expect(url.pathname).toBe('/api/sell/mock-provider/authorize');
       expect(url.searchParams.get('state')).toBe(state);
+      expect(url.searchParams.get('provider')).toBe(provider);
     });
 
     it(`handleCallback(${provider}) exchanges a valid state for a stable providerUserId`, async () => {

@@ -57,6 +57,7 @@ const startAuth = async ({
   stateStore.set(state, { provider, userId, issuedAt: Date.now() });
   const url = new URL('/api/sell/mock-provider/authorize', env.PUBLIC_BACKEND_URL);
   url.searchParams.set('state', state);
+  url.searchParams.set('provider', provider);
   return { authUrl: url.toString(), state };
 };
 
