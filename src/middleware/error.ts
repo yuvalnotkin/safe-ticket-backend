@@ -4,11 +4,13 @@ import { ZodError } from 'zod';
 export class AppError extends Error {
   status: number;
   code: string;
+  details?: unknown;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, details?: unknown) {
     super(message);
     this.status = status;
     this.code = code;
+    this.details = details;
   }
 }
 
@@ -20,7 +22,12 @@ export const notFoundHandler = (req: Request, res: Response) => {
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next: NextFunction) => {
   if (err instanceof AppError) {
-    res.status(err.status).json({ error: { code: err.code, message: err.message } });
+    const body: { code: string; message: string; details?: unknown } = {
+      code: err.code,
+      message: err.message,
+    };
+    if (err.details !== undefined) body.details = err.details;
+    res.status(err.status).json({ error: body });
     return;
   }
 

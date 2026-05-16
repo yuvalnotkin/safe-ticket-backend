@@ -4,6 +4,7 @@ import { env } from './utils/env';
 import authRouter from './routes/auth';
 import listingsRouter from './routes/listings';
 import usersRouter from './routes/users';
+import sellRouter from './routes/sell';
 import { errorHandler, notFoundHandler } from './middleware/error';
 
 export function createApp(): Express {
@@ -19,6 +20,7 @@ export function createApp(): Express {
   app.use('/api/auth', authRouter);
   app.use('/api/listings', listingsRouter);
   app.use('/api/users', usersRouter);
+  app.use('/api/sell', sellRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

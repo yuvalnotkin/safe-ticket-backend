@@ -37,11 +37,13 @@ const FIXTURES: FixtureEntry[] = [
       {
         providerTicketId: 'MOCK-EV-A-1001',
         event: {
+          externalEventId: 'MOCK-EVT-EV-1',
           name: 'Maccabi TA vs Hapoel TA',
           date: '2026-08-09T18:30:00.000Z',
           venue: 'Bloomfield Stadium',
           city: 'Tel Aviv',
           category: 'sports',
+          eventType: 'sport',
         },
         seat: { section: 'East', row: '14', seat: '22' },
         faceValueAgorot: 18000,
@@ -51,11 +53,13 @@ const FIXTURES: FixtureEntry[] = [
       {
         providerTicketId: 'MOCK-EV-A-1002',
         event: {
+          externalEventId: 'MOCK-EVT-EV-2',
           name: 'Beitar Jerusalem vs Maccabi Haifa',
           date: '2026-08-23T19:00:00.000Z',
           venue: 'Teddy Stadium',
           city: 'Jerusalem',
           category: 'sports',
+          eventType: 'sport',
         },
         seat: { section: 'West', row: '5', seat: '12' },
         faceValueAgorot: 22000,
@@ -65,11 +69,13 @@ const FIXTURES: FixtureEntry[] = [
       {
         providerTicketId: 'MOCK-EV-A-1003',
         event: {
+          externalEventId: 'MOCK-EVT-EV-3',
           name: 'Maccabi TA vs Olympiacos (EuroLeague)',
           date: '2026-09-30T20:00:00.000Z',
           venue: 'Menora Mivtachim Arena',
           city: 'Tel Aviv',
           category: 'sports',
+          eventType: 'sport',
         },
         seat: { section: 'Lower', row: 'C', seat: '18' },
         faceValueAgorot: 55000,
@@ -79,11 +85,13 @@ const FIXTURES: FixtureEntry[] = [
       {
         providerTicketId: 'MOCK-EV-A-1004',
         event: {
+          externalEventId: 'MOCK-EVT-EV-4',
           name: 'Israel Philharmonic Orchestra',
           date: '2026-11-04T20:00:00.000Z',
           venue: 'Haifa Auditorium',
           city: 'Haifa',
           category: 'culture',
+          eventType: 'concert',
         },
         seat: { section: 'Stalls', row: '12', seat: '20' },
         faceValueAgorot: 32000,
@@ -100,11 +108,13 @@ const FIXTURES: FixtureEntry[] = [
       {
         providerTicketId: 'MOCK-LN-A-2001',
         event: {
+          externalEventId: 'MOCK-EVT-LN-1',
           name: 'Idan Raichel Live',
           date: '2026-08-14T19:00:00.000Z',
           venue: 'Hayarkon Park',
           city: 'Tel Aviv',
           category: 'culture',
+          eventType: 'concert',
         },
         seat: { section: 'GA' },
         faceValueAgorot: 35000,
@@ -114,11 +124,13 @@ const FIXTURES: FixtureEntry[] = [
       {
         providerTicketId: 'MOCK-LN-A-2002',
         event: {
+          externalEventId: 'MOCK-EVT-LN-2',
           name: 'Static & Ben El',
           date: '2026-04-15T20:30:00.000Z', // past — today is 2026-05-15
           venue: 'Menora Mivtachim Arena',
           city: 'Tel Aviv',
           category: 'culture',
+          eventType: 'concert',
         },
         seat: { section: 'A', row: '5', seat: '12' },
         faceValueAgorot: 42000,
@@ -135,11 +147,13 @@ const FIXTURES: FixtureEntry[] = [
       {
         providerTicketId: 'MOCK-HL-B-3001',
         event: {
+          externalEventId: 'MOCK-EVT-HL-1',
           name: 'Hamlet',
           date: '2026-07-12T20:00:00.000Z',
           venue: 'Habima Theatre',
           city: 'Tel Aviv',
           category: 'culture',
+          eventType: 'theater',
         },
         seat: { section: 'Stalls', row: '7', seat: '14' },
         faceValueAgorot: 28000,
@@ -149,11 +163,13 @@ const FIXTURES: FixtureEntry[] = [
       {
         providerTicketId: 'MOCK-HL-B-3002',
         event: {
+          externalEventId: 'MOCK-EVT-HL-2',
           name: 'The Cherry Orchard',
           date: '2026-08-20T19:30:00.000Z',
           venue: 'Jerusalem Theatre',
           city: 'Jerusalem',
           category: 'culture',
+          eventType: 'theater',
         },
         seat: { section: 'Mezz', row: '3', seat: '8' },
         faceValueAgorot: 24000,
@@ -163,11 +179,13 @@ const FIXTURES: FixtureEntry[] = [
       {
         providerTicketId: 'MOCK-HL-B-3003',
         event: {
+          externalEventId: 'MOCK-EVT-HL-3',
           name: 'Tech Conference 2026',
           date: '2026-10-08T09:00:00.000Z',
           venue: 'Expo Tel Aviv',
           city: 'Tel Aviv',
           category: 'culture',
+          eventType: 'other',
         },
         seat: { section: 'Standard' },
         faceValueAgorot: 89000,
@@ -184,11 +202,13 @@ const FIXTURES: FixtureEntry[] = [
       {
         providerTicketId: 'MOCK-TM-B-4001',
         event: {
+          externalEventId: 'MOCK-EVT-TM-1',
           name: 'Red Sea Jazz Festival — Opening Night',
           date: '2026-08-25T21:00:00.000Z',
           venue: 'Eilat Port',
           city: 'Eilat',
           category: 'culture',
+          eventType: 'festival',
         },
         seat: { section: 'VIP' },
         faceValueAgorot: 88000,
@@ -198,11 +218,13 @@ const FIXTURES: FixtureEntry[] = [
       {
         providerTicketId: 'MOCK-TM-B-4002',
         event: {
+          externalEventId: 'MOCK-EVT-TM-2',
           name: 'Tel Aviv Pride Concert',
           date: '2026-09-13T18:00:00.000Z',
           venue: 'Park HaYarkon',
           city: 'Tel Aviv',
           category: 'culture',
+          eventType: 'concert',
         },
         seat: { section: 'GA' },
         faceValueAgorot: 19000,

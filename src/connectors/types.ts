@@ -20,12 +20,22 @@ export type IneligibleReason =
 
 export type EventCategory = 'sports' | 'culture';
 
+// Mirrors the DB `event_type` enum in migration 0001. `create-listing` reads
+// `eventType` for the `events.event_type` column; the public API exposes the
+// coarser-grained `category` ('sports' | 'culture') the contract documents.
+export type EventType = 'concert' | 'sport' | 'theater' | 'festival' | 'other';
+
 export interface ConnectorTicketEvent {
+  // Stable per-provider event identifier. Multiple tickets to the same event
+  // share the same value; the create-listing handler upserts on
+  // (provider_id, externalEventId).
+  externalEventId: string;
   name: string;
   date: string; // ISO 8601 in UTC
   venue: string;
   city: string;
   category: EventCategory;
+  eventType: EventType;
 }
 
 export interface ConnectorTicketSeat {
